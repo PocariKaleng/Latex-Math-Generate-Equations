@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#f5f6f7">
+    <title>CTF LaTeX Equation Tool</title>
+    <link rel="icon" href="data:,">
+    <link rel="stylesheet" href="style.css">
+    <script>
+      window.MathJax = {
+        tex: {
+          inlineMath: [['$', '$']],
+          displayMath: [['$$', '$$']],
+          packages: { '[-]': ['noundefined'] },
+          formatError: (_jax, error) => { throw error; }
+        },
+        svg: { fontCache: 'none' },
+        startup: { typeset: false }
+      };
+    </script>
+    <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-svg.js"></script>
+    <script defer src="script.js"></script>
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="app-header">
+        <div>
+          <h1>CTF LaTeX Equation Tool</h1>
+          <p>Write an equation, then click its preview and press <kbd>Ctrl</kbd> + <kbd>C</kbd> to copy an image.</p>
+        </div>
+        <span class="header-tag">MathJax 3 · SVG</span>
+      </header>
+
+      <div class="workspace">
+        <section class="panel input-panel" aria-labelledby="input-title">
+          <div class="panel-heading">
+            <div>
+              <span class="step">01 / INPUT</span>
+              <h2 id="input-title">LaTeX Input</h2>
+            </div>
+          </div>
+
+          <label class="field-label" for="latex-input">Equation source</label>
+          <textarea id="latex-input" spellcheck="false" autocomplete="off" autocapitalize="off" aria-describedby="input-help">$$s = k^{-1}(H(m) + dr) \pmod n$$</textarea>
+          <p class="field-help" id="input-help">Use <code>$$...$$</code> for Display or <code>$...$</code> for Inline. Paste with <kbd>Ctrl</kbd> + <kbd>V</kbd>; the first paste replaces the example.</p>
+
+          <div class="settings-row">
+            <div class="preset-field">
+              <label class="field-label" for="preset-select">Examples</label>
+              <select id="preset-select">
+                <option value="">Choose an example</option>
+                <option value="rsa-encryption">RSA Encryption</option>
+                <option value="rsa-decryption">RSA Decryption</option>
+                <option value="euler-totient">Euler Totient</option>
+                <option value="ecdsa-signature">ECDSA Signature</option>
+                <option value="elliptic-curve">Elliptic Curve</option>
+                <option value="modular-inverse">Modular Inverse</option>
+                <option value="polynomial">Polynomial</option>
+                <option value="matrix">Matrix</option>
+              </select>
+            </div>
+
+            <fieldset class="mode-field">
+              <legend class="field-label">Mode</legend>
+              <div class="mode-options">
+                <label><input type="radio" name="mode" value="display" checked><span>Display</span></label>
+                <label><input type="radio" name="mode" value="inline"><span>Inline</span></label>
+              </div>
+            </fieldset>
+          </div>
+        </section>
+
+        <section class="panel output-panel" aria-labelledby="preview-title">
+          <div class="panel-heading">
+            <div>
+              <span class="step">02 / OUTPUT</span>
+              <h2 id="preview-title">Equation Preview</h2>
+            </div>
+            <span class="preview-badge">LIVE</span>
+          </div>
+
+          <div id="equation-preview" class="equation-preview" tabindex="0" role="region" aria-label="Rendered equation. Click or drag over it, then press Control C, or Command C on macOS, to copy as an image" aria-describedby="preview-help">
+            <span class="placeholder">Loading MathJax…</span>
+          </div>
+          <p id="preview-help" class="field-help">Click or drag over the equation to select it, then press <kbd>Ctrl</kbd> + <kbd>C</kbd> (<kbd>⌘</kbd> + <kbd>C</kbd> on Mac).</p>
+          <p id="error-message" class="error-message" role="alert" hidden></p>
+
+          <div class="actions" aria-label="Equation actions">
+            <button type="button" id="copy-latex">Copy LaTeX</button>
+            <button type="button" id="copy-image" disabled>Copy Image</button>
+            <button type="button" id="download-png" disabled>Download PNG</button>
+            <button type="button" id="clear-input" class="clear-button">Clear</button>
+          </div>
+          <p class="export-note">Image export: transparent PNG · 4× resolution · tightly cropped</p>
+        </section>
+      </div>
+
+      <p id="status" class="status" role="status" aria-live="polite"></p>
+
+      <footer class="project-footer">
+        <a class="creator-link" href="https://github.com/PocariKaleng" target="_blank" rel="noopener noreferrer" aria-label="Ariq Ardian on GitHub">
+          <img src="assets/profile.jpg" alt="" width="40" height="40" loading="lazy">
+          <span><strong>Ariq Ardian</strong><small>@PocariKaleng · GitHub profile</small></span>
+        </a>
+        <div class="project-support">
+          <span>Find this tool useful? Support the project on GitHub.</span>
+          <a class="star-link" href="https://github.com/PocariKaleng/Latex-Math-Generate-Equations" target="_blank" rel="noopener noreferrer">★ Star the repository <span aria-hidden="true">↗</span></a>
+        </div>
+      </footer>
+    </main>
+  </body>
+</html>
