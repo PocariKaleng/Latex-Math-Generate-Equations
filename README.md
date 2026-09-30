@@ -10,7 +10,8 @@ A small browser tool for writing equations in CTF and cryptography writeups. It 
 
 1. Enter `$$e^{i\pi}+1=0$$` for a display equation, or `$e^{i\pi}+1=0$` for an inline equation. Dollar delimiters are required. The examples dropdown inserts them automatically, and the Display/Inline control changes them for you.
 2. Click or drag over the rendered equation to highlight it, then press **Ctrl+C** (**Cmd+C** on macOS). Paste the PNG into an app that accepts clipboard images, such as Google Docs or Microsoft Word.
-3. Use **Copy Image**, **Download PNG**, or **Copy LaTeX** when you need those specific outputs. Download PNG uses the same cached 4× transparent image as image copying; Copy LaTeX includes the dollar delimiters.
+3. Choose **Light · dark equation** when pasting onto a light background, or **Dark · white equation** when pasting onto a dark background. The preview shows the selected background, while the copied or downloaded PNG stays transparent. A PNG cannot detect the background of the app where it is pasted, so select the matching option before copying.
+4. Use **Copy Image**, **Download PNG**, or **Copy LaTeX** when you need those specific outputs. Download PNG uses the same cached 4× transparent image as image copying; Copy LaTeX includes the dollar delimiters.
 
 You can paste LaTeX source into the input with **Ctrl+V** (**Cmd+V** on macOS). The first paste replaces the starter example; later pastes follow the normal cursor or selection. An image on the clipboard cannot be converted back into LaTeX source by this tool.
 

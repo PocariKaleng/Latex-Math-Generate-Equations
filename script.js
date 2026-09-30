@@ -44,6 +44,7 @@ const status = document.querySelector("#status");
 const presetSelect = document.querySelector("#preset-select");
 const copyImageButton = document.querySelector("#copy-image");
 const downloadButton = document.querySelector("#download-png");
+const pasteBackgroundInputs = document.querySelectorAll('input[name="paste-background"]');
 
 let changeVersion = 0;
 let renderedVersion = -1;
@@ -52,6 +53,11 @@ let statusTimer;
 let renderQueue = Promise.resolve();
 let cachedPngBlob = null;
 let pngPromise = null;
+
+function equationColor() {
+  return document.querySelector('input[name="paste-background"]:checked').value === "dark"
+    ? "#ffffff" : "#1f252b";
+}
 
 function showStatus(message, isError = false) {
   clearTimeout(statusTimer);
@@ -135,7 +141,7 @@ function makePlaceholder(message) {
   return span;
 }
 
-function svgToPng(svg) {
+function svgToPng(svg, color) {
   const box = svg.getBoundingClientRect();
   if (!box.width || !box.height) return Promise.reject(new Error("Equation has no visible size."));
 
@@ -145,8 +151,8 @@ function svgToPng(svg) {
   clone.setAttribute("xmlns", SVG_NS);
   clone.setAttribute("width", `${box.width}px`);
   clone.setAttribute("height", `${box.height}px`);
-  clone.setAttribute("color", "#1f252b");
-  clone.style.color = "#1f252b";
+  clone.setAttribute("color", color);
+  clone.style.color = color;
 
   const xml = new XMLSerializer().serializeToString(clone);
   const svgUrl = URL.createObjectURL(new Blob([xml], { type: "image/svg+xml;charset=utf-8" }));
@@ -186,7 +192,7 @@ function generatePngBlob() {
   if (!svg) return Promise.reject(new Error("There is no equation to export."));
 
   const version = renderedVersion;
-  pngPromise = svgToPng(svg).then(blob => {
+  pngPromise = svgToPng(svg, equationColor()).then(blob => {
     if (version !== changeVersion) throw new Error("The equation changed. Try again.");
     cachedPngBlob = blob;
     return blob;
@@ -284,6 +290,12 @@ presetSelect.addEventListener("change", () => {
   isUntouchedExample = false;
   queueRender(true);
   input.focus();
+});
+pasteBackgroundInputs.forEach(radio => {
+  radio.addEventListener("change", () => {
+    preview.classList.toggle("dark", radio.value === "dark");
+    queueRender(true);
+  });
 });
 document.querySelector("#copy-latex").addEventListener("click", copyLatex);
 copyImageButton.addEventListener("click", copyEquationImage);

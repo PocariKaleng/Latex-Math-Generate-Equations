@@ -86,13 +86,21 @@
           <p id="preview-help" class="field-help">Click or drag over the equation to select it, then press <kbd>Ctrl</kbd> + <kbd>C</kbd> (<kbd>⌘</kbd> + <kbd>C</kbd> on Mac).</p>
           <p id="error-message" class="error-message" role="alert" hidden></p>
 
+          <fieldset class="export-color-field">
+            <legend class="field-label">Background where you will paste</legend>
+            <div class="mode-options">
+              <label><input type="radio" name="paste-background" value="light" checked><span>Light · dark equation</span></label>
+              <label><input type="radio" name="paste-background" value="dark"><span>Dark · white equation</span></label>
+            </div>
+          </fieldset>
+
           <div class="actions" aria-label="Equation actions">
             <button type="button" id="copy-latex">Copy LaTeX</button>
             <button type="button" id="copy-image" disabled>Copy Image</button>
             <button type="button" id="download-png" disabled>Download PNG</button>
             <button type="button" id="clear-input" class="clear-button">Clear</button>
           </div>
-          <p class="export-note">Image export: transparent PNG · 4× resolution · tightly cropped</p>
+          <p class="export-note">Image export: transparent PNG · 4× resolution · tightly cropped. Choose the background above to set the equation color.</p>
         </section>
       </div>
 
