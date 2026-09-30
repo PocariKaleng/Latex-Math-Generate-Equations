@@ -214,10 +214,13 @@ async function copyEquationImage() {
   }
 
   try {
+    const isWhite = equationColor() === "#ffffff";
     // Pass the Blob promise directly so clipboard.write starts during the user gesture.
     const png = cachedPngBlob || generatePngBlob();
     await navigator.clipboard.write([new ClipboardItem({ "image/png": png })]);
-    showStatus("Equation copied as image");
+    showStatus(isWhite
+      ? "White equation copied as transparent image"
+      : "Dark equation copied as transparent image");
   } catch (error) {
     showStatus("Clipboard access failed. Use Download PNG instead.", true);
   }
