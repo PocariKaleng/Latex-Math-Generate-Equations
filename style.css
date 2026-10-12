@@ -29,7 +29,6 @@ button, select, textarea { font: inherit; }
 .app-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; margin-bottom: 32px; }
 .app-header h1 { margin: 0; font-size: clamp(24px, 3vw, 32px); font-weight: 650; letter-spacing: -0.035em; line-height: 1.2; }
 .app-header p { margin: 10px 0 0; color: var(--muted); }
-.header-tag { flex: none; margin-top: 4px; color: var(--muted); font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
 
 .workspace { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px; align-items: stretch; }
 .panel { min-width: 0; padding: 24px; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; }
@@ -96,7 +95,6 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
   .workspace { grid-template-columns: 1fr; gap: 14px; }
   .panel { padding: 20px; }
   .app-header { margin-bottom: 24px; }
-  .header-tag { display: none; }
   textarea { min-height: 190px; }
   .equation-preview { min-height: 190px; }
   .project-footer, .project-support { align-items: flex-start; flex-direction: column; }

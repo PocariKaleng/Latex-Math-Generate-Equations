@@ -105,8 +105,8 @@ async function renderEquation(version) {
   }
 
   if (!window.MathJax?.tex2svgPromise) {
-    preview.replaceChildren(makePlaceholder("MathJax could not load."));
-    setError("MathJax could not load. Check your internet connection and reload the page.");
+    preview.replaceChildren(makePlaceholder("Equation preview could not load."));
+    setError("Equation preview could not load. Check your internet connection and reload the page.");
     return;
   }
 
@@ -119,7 +119,7 @@ async function renderEquation(version) {
     if (version !== changeVersion) return;
 
     const svg = result.querySelector("svg");
-    if (!svg) throw new Error("MathJax did not return an SVG equation.");
+    if (!svg) throw new Error("Equation renderer did not return an SVG equation.");
 
     preview.classList.toggle("inline", !display);
     preview.replaceChildren(result);
@@ -338,10 +338,10 @@ if (window.MathJax?.startup?.promise) {
     }
     queueRender(true);
   }).catch(() => {
-    preview.replaceChildren(makePlaceholder("MathJax could not load."));
-    setError("MathJax could not load. Check your internet connection and reload the page.");
+    preview.replaceChildren(makePlaceholder("Equation preview could not load."));
+    setError("Equation preview could not load. Check your internet connection and reload the page.");
   });
 } else {
-  preview.replaceChildren(makePlaceholder("MathJax could not load."));
-  setError("MathJax could not load. Check your internet connection and reload the page.");
+  preview.replaceChildren(makePlaceholder("Equation preview could not load."));
+  setError("Equation preview could not load. Check your internet connection and reload the page.");
 }

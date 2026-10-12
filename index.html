@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#f5f6f7">
     <title>CTF LaTeX Equation Tool</title>
     <link rel="icon" href="data:,">
-    <link rel="stylesheet" href="style.css?v=20260930-dark-export">
+    <link rel="stylesheet" href="style.css?v=20261012-ui">
     <script>
       window.MathJax = {
         tex: {
@@ -20,7 +20,7 @@
       };
     </script>
     <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-svg.js"></script>
-    <script defer src="script.js?v=20260930-dark-export"></script>
+    <script defer src="script.js?v=20261012-ui"></script>
   </head>
   <body>
     <main class="app-shell">
@@ -29,7 +29,6 @@
           <h1>CTF LaTeX Equation Tool</h1>
           <p>Write an equation, then click its preview and press <kbd>Ctrl</kbd> + <kbd>C</kbd> to copy an image.</p>
         </div>
-        <span class="header-tag">MathJax 3 · SVG</span>
       </header>
 
       <div class="workspace">
@@ -81,7 +80,7 @@
           </div>
 
           <div id="equation-preview" class="equation-preview" tabindex="0" role="region" aria-label="Rendered equation. Click or drag over it, then press Control C, or Command C on macOS, to copy as an image" aria-describedby="preview-help">
-            <span class="placeholder">Loading MathJax…</span>
+            <span class="placeholder">Loading equation preview…</span>
           </div>
           <p id="preview-help" class="field-help">Click or drag over the equation to select it, then press <kbd>Ctrl</kbd> + <kbd>C</kbd> (<kbd>⌘</kbd> + <kbd>C</kbd> on Mac).</p>
           <p id="error-message" class="error-message" role="alert" hidden></p>
