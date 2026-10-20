@@ -27,7 +27,7 @@ jobs:
         run: |
           mkdir -p site/assets
           cp index.html style.css script.js site/
-          cp assets/profile.jpg site/assets/
+          cp assets/profile.png assets/fx-logo.svg site/assets/
       - uses: actions/upload-pages-artifact@v3
         with:
           path: site

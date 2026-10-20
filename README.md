@@ -39,7 +39,8 @@ The [Pages workflow](.github/workflows/pages.yml) publishes the static site when
 index.html                    Interface and MathJax configuration
 style.css                     Responsive styling
 script.js                     Rendering, clipboard, and PNG export
-assets/profile.jpg            Creator avatar
+assets/profile.png            Creator avatar
+assets/fx-logo.svg            Mathematical Fx logo and favicon
 assets/preview.png            README screenshot
 .github/workflows/pages.yml   GitHub Pages deployment
 README.md                     Project documentation
