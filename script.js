@@ -1,6 +1,7 @@
 "use strict";
 
-const SCALE = 4;
+const COPY_SCALE = 2;
+const DOWNLOAD_SCALE = 4;
 const DEBOUNCE_MS = 150;
 const SVG_NS = "http://www.w3.org/2000/svg";
 
@@ -51,8 +52,8 @@ let renderedVersion = -1;
 let debounceTimer;
 let statusTimer;
 let renderQueue = Promise.resolve();
-let cachedPngBlob = null;
-let pngPromise = null;
+const cachedPngBlobs = new Map();
+const pngPromises = new Map();
 
 function equationColor() {
   return document.querySelector('input[name="paste-background"]:checked').value === "dark"
@@ -81,8 +82,8 @@ function queueRender(immediate = false) {
   clearTimeout(debounceTimer);
   preview.classList.remove("is-selected");
   renderedVersion = -1;
-  cachedPngBlob = null;
-  pngPromise = null;
+  cachedPngBlobs.clear();
+  pngPromises.clear();
   setImageActionsEnabled(false);
   setError("");
 
@@ -141,12 +142,12 @@ function makePlaceholder(message) {
   return span;
 }
 
-function svgToPng(svg, color) {
+function svgToPng(svg, color, scale) {
   const box = svg.getBoundingClientRect();
   if (!box.width || !box.height) return Promise.reject(new Error("Equation has no visible size."));
 
-  const width = Math.ceil(box.width * SCALE);
-  const height = Math.ceil(box.height * SCALE);
+  const width = Math.ceil(box.width * scale);
+  const height = Math.ceil(box.height * scale);
   const clone = svg.cloneNode(true);
   clone.setAttribute("xmlns", SVG_NS);
   clone.setAttribute("width", `${box.width}px`);
@@ -168,7 +169,7 @@ function svgToPng(svg, color) {
       if (!context) return reject(new Error("Canvas is unavailable."));
       context.imageSmoothingEnabled = true;
       context.imageSmoothingQuality = "high";
-      context.scale(SCALE, SCALE);
+      context.scale(scale, scale);
       context.drawImage(image, 0, 0, box.width, box.height);
       canvas.toBlob(blob => {
         if (blob) resolve(blob);
@@ -183,22 +184,23 @@ function svgToPng(svg, color) {
   });
 }
 
-function generatePngBlob() {
-  if (cachedPngBlob) return Promise.resolve(cachedPngBlob);
-  if (pngPromise) return pngPromise;
+function generatePngBlob(scale) {
+  if (cachedPngBlobs.has(scale)) return Promise.resolve(cachedPngBlobs.get(scale));
+  if (pngPromises.has(scale)) return pngPromises.get(scale);
   if (renderedVersion !== changeVersion) return Promise.reject(new Error("The preview is still updating."));
 
   const svg = preview.querySelector("svg");
   if (!svg) return Promise.reject(new Error("There is no equation to export."));
 
   const version = renderedVersion;
-  pngPromise = svgToPng(svg, equationColor()).then(blob => {
+  const pngPromise = svgToPng(svg, equationColor(), scale).then(blob => {
     if (version !== changeVersion) throw new Error("The equation changed. Try again.");
-    cachedPngBlob = blob;
+    cachedPngBlobs.set(scale, blob);
     return blob;
   }).finally(() => {
-    if (version === changeVersion) pngPromise = null;
+    if (version === changeVersion) pngPromises.delete(scale);
   });
+  pngPromises.set(scale, pngPromise);
   return pngPromise;
 }
 
@@ -216,7 +218,7 @@ async function copyEquationImage() {
   try {
     const isWhite = equationColor() === "#ffffff";
     // Pass the Blob promise directly so clipboard.write starts during the user gesture.
-    const png = cachedPngBlob || generatePngBlob();
+    const png = generatePngBlob(COPY_SCALE);
     await navigator.clipboard.write([new ClipboardItem({ "image/png": png })]);
     showStatus(isWhite
       ? "White equation copied as transparent image"
@@ -241,7 +243,7 @@ async function copyLatex() {
 
 async function downloadPng() {
   try {
-    const blob = await generatePngBlob();
+    const blob = await generatePngBlob(DOWNLOAD_SCALE);
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
