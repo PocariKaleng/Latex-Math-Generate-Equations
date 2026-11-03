@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#f5f6f7">
     <title>CTF LaTeX Equation Tool</title>
     <link rel="icon" type="image/svg+xml" href="assets/fx-logo.svg?v=20261020-function">
-    <link rel="stylesheet" href="style.css?v=20261020-function">
+    <link rel="stylesheet" href="style.css?v=20261103-ai-import">
     <script>
       window.MathJax = {
         tex: {
@@ -20,7 +20,7 @@
       };
     </script>
     <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-svg.js"></script>
-    <script defer src="script.js?v=20261026-compact-copy"></script>
+    <script defer src="script.js?v=20261103-ai-import"></script>
   </head>
   <body>
     <main class="app-shell">
@@ -33,6 +33,31 @@
           </div>
         </div>
       </header>
+
+      <details class="panel ai-import" open>
+        <summary><span>LaTeX from AI chats</span><span class="ai-providers">ChatGPT · DeepSeek · Gemini</span></summary>
+        <p class="field-help">Paste an AI response, extract its equations, then send one to the editor below.</p>
+        <div class="ai-import-grid">
+          <div>
+            <label class="field-label" for="ai-source">AI response or LaTeX code block</label>
+            <textarea id="ai-source" spellcheck="false" maxlength="50000" aria-describedby="ai-help" placeholder="Paste a response containing \[...\], \(...\), $$...$$, $...$, or a LaTeX code block."></textarea>
+            <label class="ai-raw-option"><input type="checkbox" id="ai-raw"> Bare LaTeX only (no delimiters or explanation)</label>
+            <p class="field-help" id="ai-help">Accepts math delimiters and fenced blocks marked latex, tex, or math. Surrounding explanation is skipped.</p>
+            <div class="ai-import-actions">
+              <button type="button" id="extract-equations">Extract equations</button>
+              <button type="button" id="clear-ai">Clear response</button>
+            </div>
+          </div>
+          <div>
+            <label class="field-label" for="ai-equations">Choose an equation</label>
+            <select id="ai-equations" disabled><option>No equations extracted yet</option></select>
+            <pre class="ai-equation-source" id="ai-equation-source">Your selected LaTeX will appear here.</pre>
+            <p class="field-help" id="ai-result" role="status" aria-live="polite">Extract equations to get started.</p>
+            <button type="button" id="import-equation" disabled>Use equation in editor</button>
+          </div>
+        </div>
+        <p id="ai-error" class="error-message" role="alert" hidden></p>
+      </details>
 
       <div class="workspace">
         <section class="panel input-panel" aria-labelledby="input-title">

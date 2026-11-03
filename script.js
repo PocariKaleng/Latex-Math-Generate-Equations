@@ -37,6 +37,33 @@ function parseEquationSource(source) {
   return { latex, display: delimiter === "$$" };
 }
 
+function extractAiEquations(source) {
+  if (source.length > 50000) throw new Error("Paste up to 50,000 characters at a time.");
+  const text = source.replace(/\r\n?/g, "\n");
+  const pattern = /\x60{3}([^\n\x60]*)\n([\s\S]*?)\x60{3}|(?<!\\)\$\$([\s\S]*?)(?<!\\)\$\$|(?<!\\)\\\[([\s\S]*?)(?<!\\)\\\]|(?<!\\)\\\(([\s\S]*?)(?<!\\)\\\)|(?<![\\$])\$(?![\s$])((?:\\[^\n]|[^$\\\n])+?)(?<!\s)\$(?!\$)/g;
+  const equations = [];
+  for (const match of text.matchAll(pattern)) {
+    if (match[1] !== undefined) {
+      const language = match[1].trim().toLowerCase();
+      if (!["", "latex", "tex", "math"].includes(language)) continue;
+      const body = match[2].trim();
+      const nested = extractAiEquations(body);
+      if (nested.length) equations.push(...nested);
+      else if (language && body) {
+        if (/\$\$|\\[\[\]()]/.test(body)) {
+          throw new Error("A LaTeX block has incomplete math delimiters. Check its opening and closing markers.");
+        }
+        equations.push({ latex: body, display: true });
+      }
+    } else {
+      const latex = (match[3] ?? match[4] ?? match[5] ?? match[6]).trim();
+      if (latex) equations.push({ latex, display: match[3] !== undefined || match[4] !== undefined });
+    }
+    if (equations.length > 100) throw new Error("Paste up to 100 equations at a time.");
+  }
+  return equations;
+}
+
 const input = document.querySelector("#latex-input");
 let isUntouchedExample = input.value === input.defaultValue;
 const preview = document.querySelector("#equation-preview");
@@ -46,6 +73,73 @@ const presetSelect = document.querySelector("#preset-select");
 const copyImageButton = document.querySelector("#copy-image");
 const downloadButton = document.querySelector("#download-png");
 const pasteBackgroundInputs = document.querySelectorAll('input[name="paste-background"]');
+const aiSource = document.querySelector("#ai-source");
+const aiSelect = document.querySelector("#ai-equations");
+const aiCode = document.querySelector("#ai-equation-source");
+const aiResult = document.querySelector("#ai-result");
+const aiError = document.querySelector("#ai-error");
+const aiImportButton = document.querySelector("#import-equation");
+let aiEquations = [];
+
+function resetAiResults() {
+  aiEquations = [];
+  aiSelect.replaceChildren(new Option("No equations extracted yet", ""));
+  aiSelect.disabled = true;
+  aiImportButton.disabled = true;
+  aiCode.textContent = "Your selected LaTeX will appear here.";
+  aiResult.textContent = "Extract equations to get started.";
+  aiError.textContent = "";
+  aiError.hidden = true;
+}
+
+function showAiSelection() {
+  const equation = aiEquations[Number(aiSelect.value)];
+  aiCode.textContent = equation ? wrapEquation(equation.latex, equation.display) : "";
+}
+
+aiSource.addEventListener("input", resetAiResults);
+document.querySelector("#ai-raw").addEventListener("change", resetAiResults);
+aiSelect.addEventListener("change", showAiSelection);
+document.querySelector("#extract-equations").addEventListener("click", () => {
+  resetAiResults();
+  try {
+    if (document.querySelector("#ai-raw").checked) {
+      if (!aiSource.value.trim()) throw new Error("Paste a LaTeX equation first.");
+      if (aiSource.value.length > 50000) throw new Error("Paste up to 50,000 characters at a time.");
+      aiEquations = [{ latex: aiSource.value.trim(), display: true }];
+    } else {
+      aiEquations = extractAiEquations(aiSource.value);
+    }
+    if (!aiEquations.length) {
+      throw new Error("No equations found. Paste a latex, tex, or math code block, or enclose the formula in $$...$$, $...$, \\[...\\], or \\(...\\).");
+    }
+    aiSelect.replaceChildren(...aiEquations.map((equation, index) =>
+      new Option((index + 1) + ". " + (equation.display ? "Display" : "Inline") + " — " + equation.latex.replace(/\s+/g, " ").slice(0, 90), String(index))));
+    aiSelect.disabled = false;
+    aiImportButton.disabled = false;
+    aiResult.textContent = aiEquations.length + (aiEquations.length === 1 ? " equation found." : " equations found.") + " Choose one to render.";
+    showAiSelection();
+  } catch (error) {
+    aiError.textContent = error.message;
+    aiError.hidden = false;
+  }
+});
+document.querySelector("#clear-ai").addEventListener("click", () => {
+  aiSource.value = "";
+  document.querySelector("#ai-raw").checked = false;
+  resetAiResults();
+  aiSource.focus();
+});
+aiImportButton.addEventListener("click", () => {
+  const equation = aiEquations[Number(aiSelect.value)];
+  if (!equation) return;
+  input.value = wrapEquation(equation.latex, equation.display);
+  isUntouchedExample = false;
+  presetSelect.value = "";
+  queueRender(true);
+  input.focus();
+  showStatus("Equation imported from AI response");
+});
 
 let changeVersion = 0;
 let renderedVersion = -1;

@@ -15,6 +15,14 @@ A small browser tool for writing equations in CTF and cryptography writeups. It 
 
 You can paste LaTeX source into the input with **Ctrl+V** (**Cmd+V** on macOS). The first paste replaces the starter example; later pastes follow the normal cursor or selection. An image on the clipboard cannot be converted back into LaTeX source by this tool.
 
+## Import from AI chats
+
+The separate **LaTeX from AI chats** section accepts pasted responses from ChatGPT, DeepSeek, and Gemini. Paste a response, click **Extract equations**, choose one formula, then click **Use equation in editor**. This normalizes the selected formula into the existing editor for rendering, compact image copying, and PNG download.
+
+Supported wrappers: display math with `$$...$$` or `\[...\]`, inline math with `$...$` or `\(...\)`, and fenced code blocks labeled `latex`, `tex`, or `math`. Explanation outside these wrappers is skipped; code blocks labeled with other languages are ignored. For an unwrapped formula, enable **Bare LaTeX only**. Editing the pasted response clears the extracted list to prevent importing an old result. Limits: 50,000 characters and 100 equations per response.
+
+This imports LaTeX text already generated in an AI chat. No AI account connection or API key is needed. Copy LaTeX source rather than a screenshot or rendered equation.
+
 ## Run locally
 
 From the project directory:
