@@ -23,6 +23,8 @@ Supported wrappers: display math with `$$...$$` or `\[...\]`, inline math with `
 
 This imports LaTeX text already generated in an AI chat. No AI account connection or API key is needed. Copy LaTeX source rather than a screenshot or rendered equation.
 
+Rich-text paste (Ctrl+V from the original chat) can recover equation source from MathML annotations when the clipboard includes it. Each math element is read once, so accessible and visual copies are not imported twice. Pasted markup stays in an inert template and is never inserted into the page. If only flattened Unicode text remains, fractions, powers, and duplicated display text cannot be reconstructed reliably. The importer explains this and offers **Copy LaTeX prompt** to request separate LaTeX code blocks from the AI. **Bare LaTeX only** is for actual LaTeX source; it does not repair flattened math.
+
 Bare math environments such as `aligned`, `gathered`, `align`, `equation`, `matrix`, `bmatrix`, and `cases` are also detected automatically, including nested environments. For example, DeepSeek's four-line Maxwell equations in `\begin{aligned}...\end{aligned}` can be pasted directly without enabling **Bare LaTeX only**. An incomplete or mismatched environment shows a correction message.
 
 ## Run locally

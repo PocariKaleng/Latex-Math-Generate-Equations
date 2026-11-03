@@ -1,0 +1,22 @@
+∫−∞∞​e−x2dx=π
+​
+
+eiπ+1=0eiπ+1=0
+
+iℏ∂∂tΨ(r,t)=H^Ψ(r,t)iℏ∂t∂​Ψ(r,t)=H^Ψ(r,t)
+
+ζ(s)=∑n=1∞1ns=∏p prima11−p−sζ(s)=∑n=1∞​ns1​=∏p prima​1−p−s1​
+
+∣⟨u,v⟩∣2≤⟨u,u⟩ ⟨v,v⟩∣⟨u,v⟩∣2≤⟨u,u⟩⟨v,v⟩
+
+f^(ξ)=∫−∞∞f(x)e−2πixξ dxf^​(ξ)=∫−∞∞​f(x)e−2πixξdx
+
+∂V∂t+12σ2S2∂2V∂S2+rS∂V∂S−rV=0∂t∂V​+21​σ2S2∂S2∂2V​+rS∂S∂V​−rV=0
+
+∇⋅E=ρε0,∇⋅B=0,∇×E=−∂B∂t,∇×B=μ0J+μ0ε0∂E∂t∇⋅E=ε0​ρ​,∇⋅B=0,∇×E=−∂t∂B​,∇×B=μ0​J+μ0​ε0​∂t∂E​
+
+A=(a11a12⋯a1na21a22⋯a2n⋮⋮⋱⋮am1am2⋯amn)A=
+​a11​a21​⋮am1​​a12​a22​⋮am2​​⋯⋯⋱⋯​a1n​a2n​⋮amn​​
+​
+
+∫0∞xs−1ex−1 dx=Γ(s)ζ(s)∫0∞​ex−1xs−1​dx=Γ(s)ζ(s)

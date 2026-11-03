@@ -93,6 +93,42 @@ function extractAiEquations(source) {
   return equations;
 }
 
+function looksLikeFlattenedMath(source) {
+  return /[\u200b-\u200d\u2060]/.test(source) ||
+    (/[∫∑∏∂∇ℏ∞≤]/.test(source) && !/\\(?:[a-zA-Z]+|[\[(])/.test(source));
+}
+
+function extractClipboardEquations(html) {
+  if (!html) return [];
+  if (html.length > 1000000) throw new Error("Copied response is too large. Copy a smaller selection.");
+  // Template contents stay inert: pasted markup is never added to the live page.
+  const template = document.createElement("template");
+  template.innerHTML = html;
+  const equations = [];
+  const seenMath = new Set();
+  let characters = 0;
+  for (const annotation of template.content.querySelectorAll("math annotation[encoding]")) {
+    const encoding = annotation.getAttribute("encoding").trim().toLowerCase();
+    if (!["application/x-tex", "application/x-latex"].includes(encoding)) continue;
+    const math = annotation.closest("math");
+    const latex = annotation.textContent.trim();
+    if (!latex || seenMath.has(math)) continue;
+    seenMath.add(math);
+    characters += latex.length;
+    if (characters > 50000 || equations.length >= 100) {
+      throw new Error("Copy up to 100 equations and 50,000 LaTeX characters at a time.");
+    }
+    equations.push({
+      latex,
+      display: math.getAttribute("display") === "block" || Boolean(math.closest(".katex-display"))
+    });
+  }
+  return equations;
+}
+
+const FLATTENED_MATH_MESSAGE = "This looks like copied rendered math: fractions, powers, or duplicated formulas have lost their structure. Paste directly from the original chat with Ctrl+V, or use Copy LaTeX prompt to request the original LaTeX. Bare LaTeX cannot restore missing structure.";
+const LATEX_REQUEST = "Please return the equations from your previous response as LaTeX source. Put each complete equation in a separate fenced code block labeled latex. Preserve all fractions, exponents, integral and sum limits, matrices, and line breaks. Do not use rendered equations or duplicated Unicode math text. Preserve the equations as written; do not evaluate or change them.";
+
 const input = document.querySelector("#latex-input");
 let isUntouchedExample = input.value === input.defaultValue;
 const preview = document.querySelector("#equation-preview");
@@ -127,6 +163,38 @@ function showAiSelection() {
 }
 
 aiSource.addEventListener("input", resetAiResults);
+aiSource.addEventListener("paste", event => {
+  try {
+    const equations = extractClipboardEquations(event.clipboardData?.getData("text/html"));
+    if (!equations.length) return;
+    event.preventDefault();
+    const start = aiSource.selectionStart;
+    const end = aiSource.selectionEnd;
+    const pasted = equations.map(equation => wrapEquation(equation.latex, equation.display)).join("\n\n");
+    const prefix = start && aiSource.value[start - 1] !== "\n" ? "\n" : "";
+    const suffix = end < aiSource.value.length && aiSource.value[end] !== "\n" ? "\n" : "";
+    if (aiSource.value.length - (end - start) + prefix.length + pasted.length + suffix.length > 50000) {
+      throw new Error("Paste up to 50,000 characters at a time.");
+    }
+    aiSource.setRangeText(prefix + pasted + suffix, start, end, "end");
+    document.querySelector("#ai-raw").checked = false;
+    resetAiResults();
+    aiResult.textContent = equations.length + " equation source(s) recovered from rich text. Click Extract equations.";
+  } catch (error) {
+    event.preventDefault();
+    resetAiResults();
+    aiError.textContent = error.message;
+    aiError.hidden = false;
+  }
+});
+document.querySelector("#copy-latex-prompt").addEventListener("click", async () => {
+  try {
+    await navigator.clipboard.writeText(LATEX_REQUEST);
+    aiResult.textContent = "Prompt copied. Paste it into your AI chat, then copy its LaTeX code blocks here.";
+  } catch {
+    aiResult.textContent = LATEX_REQUEST;
+  }
+});
 document.querySelector("#ai-raw").addEventListener("change", resetAiResults);
 aiSelect.addEventListener("change", showAiSelection);
 document.querySelector("#extract-equations").addEventListener("click", () => {
@@ -135,11 +203,13 @@ document.querySelector("#extract-equations").addEventListener("click", () => {
     if (document.querySelector("#ai-raw").checked) {
       if (!aiSource.value.trim()) throw new Error("Paste a LaTeX equation first.");
       if (aiSource.value.length > 50000) throw new Error("Paste up to 50,000 characters at a time.");
+      if (looksLikeFlattenedMath(aiSource.value)) throw new Error(FLATTENED_MATH_MESSAGE);
       aiEquations = [{ latex: aiSource.value.trim(), display: true }];
     } else {
       aiEquations = extractAiEquations(aiSource.value);
     }
     if (!aiEquations.length) {
+      if (looksLikeFlattenedMath(aiSource.value)) throw new Error(FLATTENED_MATH_MESSAGE);
       throw new Error("No equations found. Paste a latex, tex, or math code block, or enclose the formula in $$...$$, $...$, \\[...\\], or \\(...\\).");
     }
     aiSelect.replaceChildren(...aiEquations.map((equation, index) =>

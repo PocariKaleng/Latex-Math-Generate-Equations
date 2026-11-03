@@ -11,6 +11,24 @@ const read = value => JSON.parse(JSON.stringify(extract(value)));
 const fence = String.fromCharCode(96).repeat(3);
 const maxwell = fs.readFileSync(path.join(__dirname, "fixtures/deepseek-maxwell.tex"), "utf8").trim().replace(/\r\n/g, "\n");
 
+test("extracts all five Google AI Mode examples without changing the source", () => {
+  const google = fs.readFileSync(path.join(__dirname, "fixtures/google-ai-mode.txt"), "utf8");
+  const equations = read(google);
+  assert.equal(equations.length, 5);
+  assert(equations.every(equation => !equation.display));
+  assert.equal(equations[0].latex, "x=\\frac{-b\\pm \\sqrt{b^{2}-4ac}}{2a}");
+  assert.equal(equations[4].latex, "f(x)=\\sum _{n=0}^{\\infty }\\frac{f^{(n)}(a)}{n!}(x-a)^{n}");
+});
+
+test("recognizes flattened DeepSeek text without inventing missing fractions or powers", () => {
+  const detect = vm.runInNewContext(source.slice(0, source.indexOf('const input = document.querySelector')) + "\nlooksLikeFlattenedMath;");
+  const flattened = fs.readFileSync(path.join(__dirname, "fixtures/deepseek-rendered.txt"), "utf8");
+  assert.equal(detect(flattened), true);
+  assert.deepEqual(read(flattened), []);
+  assert.equal(detect("\\int_0^\\infty x^2\\,dx"), false);
+  assert.equal(detect("An ordinary explanation."), false);
+});
+
 test("imports the exact bare aligned Maxwell equations from DeepSeek as one formula", () => {
   assert.deepEqual(read(maxwell), [{ latex: maxwell, display: true }]);
   assert.deepEqual(read("Maxwell equations:\n" + maxwell + "\nThen $x=1$."), [

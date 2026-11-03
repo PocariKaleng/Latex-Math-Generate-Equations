@@ -1,0 +1,10 @@
+• Rumus Kuadratik (Rumus ABC):
+\(x=\frac{-b\pm \sqrt{b^{2}-4ac}}{2a}\)
+• Teorema Dasar Kalkulus:
+\(\int _{a}^{b}f(x)\,dx=F(b)-F(a)\)
+• Persamaan Karakteristik Nilai Eigen:
+\(\det (A-\lambda I)=0\)
+• Persamaan Schrödinger (Fisika Kuantum):
+\(-\frac{\hbar ^{2}}{2m}\nabla ^{2}\psi +V\psi =E\psi \)
+• Deret Taylor:
+\(f(x)=\sum _{n=0}^{\infty }\frac{f^{(n)}(a)}{n!}(x-a)^{n}\)
