@@ -20,7 +20,7 @@
       };
     </script>
     <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-svg.js"></script>
-    <script defer src="script.js?v=20261103-ai-import"></script>
+    <script defer src="script.js?v=20261103-deepseek-aligned"></script>
   </head>
   <body>
     <main class="app-shell">
@@ -42,7 +42,7 @@
             <label class="field-label" for="ai-source">AI response or LaTeX code block</label>
             <textarea id="ai-source" spellcheck="false" maxlength="50000" aria-describedby="ai-help" placeholder="Paste a response containing \[...\], \(...\), $$...$$, $...$, or a LaTeX code block."></textarea>
             <label class="ai-raw-option"><input type="checkbox" id="ai-raw"> Bare LaTeX only (no delimiters or explanation)</label>
-            <p class="field-help" id="ai-help">Accepts math delimiters and fenced blocks marked latex, tex, or math. Surrounding explanation is skipped.</p>
+            <p class="field-help" id="ai-help">Accepts math delimiters, LaTeX code blocks, and bare environments such as \begin{aligned}...\end{aligned}. Surrounding explanation is skipped.</p>
             <div class="ai-import-actions">
               <button type="button" id="extract-equations">Extract equations</button>
               <button type="button" id="clear-ai">Clear response</button>
@@ -70,7 +70,7 @@
 
           <label class="field-label" for="latex-input">Equation source</label>
           <textarea id="latex-input" spellcheck="false" autocomplete="off" autocapitalize="off" aria-describedby="input-help">$$s = k^{-1}(H(m) + dr) \pmod n$$</textarea>
-          <p class="field-help" id="input-help">Use <code>$$...$$</code> for Display or <code>$...$</code> for Inline. Paste with <kbd>Ctrl</kbd> + <kbd>V</kbd>; the first paste replaces the example.</p>
+          <p class="field-help" id="input-help">Use <code>$$...$$</code> for Display or <code>$...$</code> for Inline. You can also paste a complete <code>\begin{aligned}...\end{aligned}</code> block directly. The first paste replaces the example.</p>
 
           <div class="settings-row">
             <div class="preset-field">

@@ -8,7 +8,7 @@ A small browser tool for writing equations in CTF and cryptography writeups. It 
 
 ## Use
 
-1. Enter `$$e^{i\pi}+1=0$$` for a display equation, or `$e^{i\pi}+1=0$` for an inline equation. Dollar delimiters are required. The examples dropdown inserts them automatically, and the Display/Inline control changes them for you.
+1. Enter `$$e^{i\pi}+1=0$$` for a display equation, or `$e^{i\pi}+1=0$` for an inline equation. Complete math environments such as `\begin{aligned}...\end{aligned}` also work directly without dollar delimiters. The examples dropdown inserts delimiters automatically, and the Display/Inline control changes them for you.
 2. Click or drag over the rendered equation to highlight it, then press **Ctrl+C** (**Cmd+C** on macOS). Paste the PNG into an app that accepts clipboard images, such as Google Docs or Microsoft Word.
 3. Choose **Light · dark equation** when pasting onto a light background, or **Dark · white equation** when pasting onto a dark background. The preview shows the selected background, while the copied or downloaded PNG stays transparent. A PNG cannot detect the background of the app where it is pasted, so select the matching option before copying.
 4. Use **Copy Image**, **Download PNG**, or **Copy LaTeX** when you need those specific outputs. Image copying (including Ctrl+C on the preview) uses a compact 2× PNG for documents, with half the width and height of the previous 4× clipboard image. Download PNG keeps the full 4× resolution. Both images are transparent and cached separately; Copy LaTeX includes the dollar delimiters.
@@ -22,6 +22,8 @@ The separate **LaTeX from AI chats** section accepts pasted responses from ChatG
 Supported wrappers: display math with `$$...$$` or `\[...\]`, inline math with `$...$` or `\(...\)`, and fenced code blocks labeled `latex`, `tex`, or `math`. Explanation outside these wrappers is skipped; code blocks labeled with other languages are ignored. For an unwrapped formula, enable **Bare LaTeX only**. Editing the pasted response clears the extracted list to prevent importing an old result. Limits: 50,000 characters and 100 equations per response.
 
 This imports LaTeX text already generated in an AI chat. No AI account connection or API key is needed. Copy LaTeX source rather than a screenshot or rendered equation.
+
+Bare math environments such as `aligned`, `gathered`, `align`, `equation`, `matrix`, `bmatrix`, and `cases` are also detected automatically, including nested environments. For example, DeepSeek's four-line Maxwell equations in `\begin{aligned}...\end{aligned}` can be pasted directly without enabling **Bare LaTeX only**. An incomplete or mismatched environment shows a correction message.
 
 ## Run locally
 

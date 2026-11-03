@@ -24,8 +24,32 @@ function wrapEquation(latex, display) {
   return `${delimiter}${latex}${delimiter}`;
 }
 
+function readMathEnvironment(source, start = 0) {
+  const opening = /^\\begin\{(aligned|alignedat|gathered|split|align\*?|gather\*?|equation\*?|[bpBvV]?matrix|cases)\}/.exec(source.slice(start));
+  if (!opening) return null;
+  const stack = [opening[1]];
+  const tokens = /\\(begin|end)\{([^}]+)\}/g;
+  tokens.lastIndex = start + opening[0].length;
+  let token;
+  while ((token = tokens.exec(source))) {
+    if (token[1] === "begin") stack.push(token[2]);
+    else {
+      const expected = stack.pop();
+      if (token[2] !== expected) {
+        throw new Error("Mismatched LaTeX environment. Expected \\end{" + expected + "}.");
+      }
+      if (!stack.length) return { latex: source.slice(start, tokens.lastIndex), end: tokens.lastIndex };
+    }
+  }
+  throw new Error("Incomplete LaTeX environment. Add \\end{" + stack[stack.length - 1] + "}.");
+}
+
 function parseEquationSource(source) {
   const value = source.trim();
+  const environment = readMathEnvironment(value);
+  if (environment && environment.end === value.length) {
+    return { latex: environment.latex, display: true };
+  }
   const delimiter = value.startsWith("$$") ? "$$" : value.startsWith("$") ? "$" : null;
   if (!delimiter || !value.endsWith(delimiter) ||
       (delimiter === "$" && value.endsWith("$$"))) {
@@ -40,10 +64,15 @@ function parseEquationSource(source) {
 function extractAiEquations(source) {
   if (source.length > 50000) throw new Error("Paste up to 50,000 characters at a time.");
   const text = source.replace(/\r\n?/g, "\n");
-  const pattern = /\x60{3}([^\n\x60]*)\n([\s\S]*?)\x60{3}|(?<!\\)\$\$([\s\S]*?)(?<!\\)\$\$|(?<!\\)\\\[([\s\S]*?)(?<!\\)\\\]|(?<!\\)\\\(([\s\S]*?)(?<!\\)\\\)|(?<![\\$])\$(?![\s$])((?:\\[^\n]|[^$\\\n])+?)(?<!\s)\$(?!\$)/g;
+  const pattern = /\x60{3}([^\n\x60]*)\n([\s\S]*?)\x60{3}|(?<!\\)\$\$([\s\S]*?)(?<!\\)\$\$|(?<!\\)\\\[([\s\S]*?)(?<!\\)\\\]|(?<!\\)\\\(([\s\S]*?)(?<!\\)\\\)|(?<![\\$])\$(?![\s$])((?:\\[^\n]|[^$\\\n])+?)(?<!\s)\$(?!\$)|(?<!\\)\\begin\{(aligned|alignedat|gathered|split|align\*?|gather\*?|equation\*?|[bpBvV]?matrix|cases)\}/g;
   const equations = [];
-  for (const match of text.matchAll(pattern)) {
-    if (match[1] !== undefined) {
+  let match;
+  while ((match = pattern.exec(text))) {
+    if (match[7] !== undefined) {
+      const environment = readMathEnvironment(text, match.index);
+      equations.push({ latex: environment.latex, display: true });
+      pattern.lastIndex = environment.end;
+    } else if (match[1] !== undefined) {
       const language = match[1].trim().toLowerCase();
       if (!["", "latex", "tex", "math"].includes(language)) continue;
       const body = match[2].trim();
