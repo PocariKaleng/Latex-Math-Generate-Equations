@@ -2,6 +2,9 @@
 
 const COPY_SCALE = 2;
 const DOWNLOAD_SCALE = 4;
+// Export scales are relative to a 14px equation, so enlarging the on-screen preview
+// does not change the pixel size of copied or downloaded PNGs.
+const EXPORT_BASE_FONT_PX = 14;
 const DEBOUNCE_MS = 150;
 const SVG_NS = "http://www.w3.org/2000/svg";
 
@@ -144,6 +147,14 @@ const aiCode = document.querySelector("#ai-equation-source");
 const aiResult = document.querySelector("#ai-result");
 const aiError = document.querySelector("#ai-error");
 const aiImportButton = document.querySelector("#import-equation");
+const aiRawInput = document.querySelector("#ai-raw");
+const aiPanel = document.querySelector("#ai-import");
+const previewHint = document.querySelector("#preview-help");
+
+// Show the shortcut key this visitor will actually press.
+if (/Mac|iPhone|iPad|iPod/.test(navigator.userAgentData?.platform || navigator.platform || "")) {
+  document.querySelectorAll("[data-mod-key]").forEach(key => { key.textContent = "⌘"; });
+}
 let aiEquations = [];
 
 function resetAiResults() {
@@ -152,7 +163,9 @@ function resetAiResults() {
   aiSelect.disabled = true;
   aiImportButton.disabled = true;
   aiCode.textContent = "Your selected LaTeX will appear here.";
-  aiResult.textContent = "Extract equations to get started.";
+  aiResult.textContent = aiSource.value.trim()
+    ? "Click Extract equations to find the equations in this response."
+    : "Paste a response to get started.";
   aiError.textContent = "";
   aiError.hidden = true;
 }
@@ -162,45 +175,15 @@ function showAiSelection() {
   aiCode.textContent = equation ? wrapEquation(equation.latex, equation.display) : "";
 }
 
-aiSource.addEventListener("input", resetAiResults);
-aiSource.addEventListener("paste", event => {
-  try {
-    const equations = extractClipboardEquations(event.clipboardData?.getData("text/html"));
-    if (!equations.length) return;
-    event.preventDefault();
-    const start = aiSource.selectionStart;
-    const end = aiSource.selectionEnd;
-    const pasted = equations.map(equation => wrapEquation(equation.latex, equation.display)).join("\n\n");
-    const prefix = start && aiSource.value[start - 1] !== "\n" ? "\n" : "";
-    const suffix = end < aiSource.value.length && aiSource.value[end] !== "\n" ? "\n" : "";
-    if (aiSource.value.length - (end - start) + prefix.length + pasted.length + suffix.length > 50000) {
-      throw new Error("Paste up to 50,000 characters at a time.");
-    }
-    aiSource.setRangeText(prefix + pasted + suffix, start, end, "end");
-    document.querySelector("#ai-raw").checked = false;
-    resetAiResults();
-    aiResult.textContent = equations.length + " equation source(s) recovered from rich text. Click Extract equations.";
-  } catch (error) {
-    event.preventDefault();
-    resetAiResults();
-    aiError.textContent = error.message;
-    aiError.hidden = false;
-  }
-});
-document.querySelector("#copy-latex-prompt").addEventListener("click", async () => {
-  try {
-    await navigator.clipboard.writeText(LATEX_REQUEST);
-    aiResult.textContent = "Prompt copied. Paste it into your AI chat, then copy its LaTeX code blocks here.";
-  } catch {
-    aiResult.textContent = LATEX_REQUEST;
-  }
-});
-document.querySelector("#ai-raw").addEventListener("change", resetAiResults);
-aiSelect.addEventListener("change", showAiSelection);
-document.querySelector("#extract-equations").addEventListener("click", () => {
+function showAiError(message) {
+  aiError.textContent = message;
+  aiError.hidden = false;
+}
+
+function extractFromSource() {
   resetAiResults();
   try {
-    if (document.querySelector("#ai-raw").checked) {
+    if (aiRawInput.checked) {
       if (!aiSource.value.trim()) throw new Error("Paste a LaTeX equation first.");
       if (aiSource.value.length > 50000) throw new Error("Paste up to 50,000 characters at a time.");
       if (looksLikeFlattenedMath(aiSource.value)) throw new Error(FLATTENED_MATH_MESSAGE);
@@ -216,18 +199,74 @@ document.querySelector("#extract-equations").addEventListener("click", () => {
       new Option((index + 1) + ". " + (equation.display ? "Display" : "Inline") + " — " + equation.latex.replace(/\s+/g, " ").slice(0, 90), String(index))));
     aiSelect.disabled = false;
     aiImportButton.disabled = false;
-    aiResult.textContent = aiEquations.length + (aiEquations.length === 1 ? " equation found." : " equations found.") + " Choose one to render.";
+    aiResult.textContent = aiEquations.length === 1
+      ? "1 equation found. Use it in the editor below."
+      : aiEquations.length + " equations found. Choose one, then use it in the editor.";
     showAiSelection();
   } catch (error) {
-    aiError.textContent = error.message;
-    aiError.hidden = false;
+    aiResult.textContent = "";
+    showAiError(error.message);
+  }
+}
+
+// A plain-text paste is extracted right away; typing still waits for the Extract button.
+let extractAfterPaste = false;
+aiSource.addEventListener("input", () => {
+  if (extractAfterPaste) {
+    extractAfterPaste = false;
+    extractFromSource();
+  } else {
+    resetAiResults();
   }
 });
+aiSource.addEventListener("paste", event => {
+  extractAfterPaste = true;
+  setTimeout(() => { extractAfterPaste = false; });
+  try {
+    const equations = extractClipboardEquations(event.clipboardData?.getData("text/html"));
+    if (!equations.length) return;
+    event.preventDefault();
+    extractAfterPaste = false;
+    const start = aiSource.selectionStart;
+    const end = aiSource.selectionEnd;
+    const pasted = equations.map(equation => wrapEquation(equation.latex, equation.display)).join("\n\n");
+    const prefix = start && aiSource.value[start - 1] !== "\n" ? "\n" : "";
+    const suffix = end < aiSource.value.length && aiSource.value[end] !== "\n" ? "\n" : "";
+    if (aiSource.value.length - (end - start) + prefix.length + pasted.length + suffix.length > 50000) {
+      throw new Error("Paste up to 50,000 characters at a time.");
+    }
+    aiSource.setRangeText(prefix + pasted + suffix, start, end, "end");
+    aiRawInput.checked = false;
+    extractFromSource();
+  } catch (error) {
+    event.preventDefault();
+    extractAfterPaste = false;
+    resetAiResults();
+    showAiError(error.message);
+  }
+});
+document.querySelector("#copy-latex-prompt").addEventListener("click", async () => {
+  try {
+    await navigator.clipboard.writeText(LATEX_REQUEST);
+    aiResult.textContent = "Prompt copied. Paste it into your AI chat, then copy its LaTeX code blocks here.";
+  } catch {
+    aiResult.textContent = LATEX_REQUEST;
+  }
+});
+aiRawInput.addEventListener("change", () => {
+  if (aiSource.value.trim()) extractFromSource();
+  else resetAiResults();
+});
+aiSelect.addEventListener("change", showAiSelection);
+document.querySelector("#extract-equations").addEventListener("click", extractFromSource);
 document.querySelector("#clear-ai").addEventListener("click", () => {
   aiSource.value = "";
-  document.querySelector("#ai-raw").checked = false;
+  aiRawInput.checked = false;
   resetAiResults();
   aiSource.focus();
+});
+aiPanel.addEventListener("toggle", () => {
+  try { localStorage.setItem("ai-import-open", aiPanel.open ? "1" : "0"); } catch {}
 });
 aiImportButton.addEventListener("click", () => {
   const equation = aiEquations[Number(aiSelect.value)];
@@ -243,6 +282,9 @@ aiImportButton.addEventListener("click", () => {
 let changeVersion = 0;
 let renderedVersion = -1;
 let debounceTimer;
+let scheduleRender = () => {};
+// pending, ready, invalid, empty, or unavailable: describes the latest finished render.
+let renderState = "pending";
 let statusTimer;
 let renderQueue = Promise.resolve();
 const cachedPngBlobs = new Map();
@@ -257,7 +299,12 @@ function showStatus(message, isError = false) {
   clearTimeout(statusTimer);
   status.textContent = message;
   status.classList.toggle("is-error", isError);
-  statusTimer = setTimeout(() => { status.textContent = ""; }, 1800);
+  status.classList.add("is-visible");
+  // Errors stay longer because they carry a next step to read.
+  statusTimer = setTimeout(() => {
+    status.classList.remove("is-visible");
+    statusTimer = setTimeout(() => { status.textContent = ""; }, 200);
+  }, isError ? 4500 : 2000);
 }
 
 function setError(message) {
@@ -268,24 +315,49 @@ function setError(message) {
 function setImageActionsEnabled(enabled) {
   copyImageButton.disabled = !enabled;
   downloadButton.disabled = !enabled;
+  // The copy hint only makes sense while there is an equation to copy.
+  previewHint.hidden = !enabled;
 }
 
+// Buttons and errors keep their last state while typing, so they do not flicker on every key.
 function queueRender(immediate = false) {
   const version = ++changeVersion;
   clearTimeout(debounceTimer);
+  debounceTimer = undefined;
   preview.classList.remove("is-selected");
   renderedVersion = -1;
+  renderState = "pending";
   cachedPngBlobs.clear();
   pngPromises.clear();
-  setImageActionsEnabled(false);
-  setError("");
 
-  const schedule = () => {
+  scheduleRender = () => {
+    debounceTimer = undefined;
     // MathJax 3 conversions share internal state, so they must run in sequence.
     renderQueue = renderQueue.catch(() => {}).then(() => renderEquation(version));
   };
-  if (immediate) schedule();
-  else debounceTimer = setTimeout(schedule, DEBOUNCE_MS);
+  if (immediate) scheduleRender();
+  else debounceTimer = setTimeout(scheduleRender, DEBOUNCE_MS);
+}
+
+// Starts a waiting debounced render now, so an export reflects the text in the editor.
+function flushRender() {
+  if (debounceTimer !== undefined) {
+    clearTimeout(debounceTimer);
+    scheduleRender();
+  }
+  return renderQueue.catch(() => {});
+}
+
+function showPreviewMessage(message) {
+  preview.classList.remove("inline", "is-stale");
+  preview.replaceChildren(makePlaceholder(message));
+}
+
+function showPreviewUnavailable() {
+  renderState = "unavailable";
+  setImageActionsEnabled(false);
+  showPreviewMessage("Equation preview could not load.");
+  setError("Equation preview could not load. Check your internet connection and reload the page.");
 }
 
 async function renderEquation(version) {
@@ -293,14 +365,16 @@ async function renderEquation(version) {
 
   const latex = input.value;
   if (!latex.trim()) {
-    preview.classList.remove("inline");
-    preview.replaceChildren(makePlaceholder("Enter LaTeX to see an equation."));
+    renderState = "empty";
+    setImageActionsEnabled(false);
+    setError("");
+    input.removeAttribute("aria-invalid");
+    showPreviewMessage("Enter LaTeX to see an equation.");
     return;
   }
 
   if (!window.MathJax?.tex2svgPromise) {
-    preview.replaceChildren(makePlaceholder("Equation preview could not load."));
-    setError("Equation preview could not load. Check your internet connection and reload the page.");
+    showPreviewUnavailable();
     return;
   }
 
@@ -316,16 +390,31 @@ async function renderEquation(version) {
     if (!svg) throw new Error("Equation renderer did not return an SVG equation.");
 
     preview.classList.toggle("inline", !display);
+    preview.classList.remove("is-stale");
     preview.replaceChildren(result);
     renderedVersion = version;
+    renderState = "ready";
     setImageActionsEnabled(true);
     setError("");
+    input.removeAttribute("aria-invalid");
   } catch (error) {
     if (version !== changeVersion) return;
-    preview.classList.remove("inline");
-    preview.replaceChildren(makePlaceholder("Fix the LaTeX to update the preview."));
-    setError(error?.message || "The equation could not be rendered.");
+    renderState = "invalid";
+    setImageActionsEnabled(false);
+    setError(renderErrorMessage(error));
+    input.setAttribute("aria-invalid", "true");
+    // Keep the last good equation, dimmed, instead of flashing a placeholder mid-edit.
+    if (preview.querySelector("mjx-container")) preview.classList.add("is-stale");
+    else showPreviewMessage("Fix the LaTeX to update the preview.");
   }
+}
+
+// TeX and delimiter errors explain themselves; internal JavaScript errors would not.
+function renderErrorMessage(error) {
+  if (!error?.message || error instanceof TypeError || error instanceof RangeError) {
+    return "This LaTeX could not be rendered. Check it for stray or invisible characters.";
+  }
+  return error.message;
 }
 
 function makePlaceholder(message) {
@@ -377,17 +466,34 @@ function svgToPng(svg, color, scale) {
   });
 }
 
+function exportError(message) {
+  const error = new Error(message);
+  error.name = "ExportError";
+  return error;
+}
+
+const EXPORT_BLOCKED = {
+  invalid: "Fix the LaTeX error before exporting.",
+  empty: "Enter an equation first.",
+  unavailable: "Equation preview could not load.",
+  pending: "The preview is still updating. Try again."
+};
+
 function generatePngBlob(scale) {
   if (cachedPngBlobs.has(scale)) return Promise.resolve(cachedPngBlobs.get(scale));
   if (pngPromises.has(scale)) return pngPromises.get(scale);
-  if (renderedVersion !== changeVersion) return Promise.reject(new Error("The preview is still updating."));
+  if (renderedVersion !== changeVersion) {
+    return Promise.reject(exportError(EXPORT_BLOCKED[renderState] || EXPORT_BLOCKED.pending));
+  }
 
   const svg = preview.querySelector("svg");
-  if (!svg) return Promise.reject(new Error("There is no equation to export."));
+  if (!svg) return Promise.reject(exportError("There is no equation to export."));
 
   const version = renderedVersion;
-  const pngPromise = svgToPng(svg, equationColor(), scale).then(blob => {
-    if (version !== changeVersion) throw new Error("The equation changed. Try again.");
+  const previewFontPx = parseFloat(getComputedStyle(preview).fontSize) || EXPORT_BASE_FONT_PX;
+  const exportScale = scale * EXPORT_BASE_FONT_PX / previewFontPx;
+  const pngPromise = svgToPng(svg, equationColor(), exportScale).then(blob => {
+    if (version !== changeVersion) throw exportError("The equation changed. Try again.");
     cachedPngBlobs.set(scale, blob);
     return blob;
   }).finally(() => {
@@ -398,26 +504,29 @@ function generatePngBlob(scale) {
 }
 
 async function copyEquationImage() {
-  if (renderedVersion !== changeVersion) {
-    showStatus("Wait for the equation preview to update.", true);
-    return;
-  }
   if (!navigator.clipboard?.write || typeof ClipboardItem === "undefined" ||
       (ClipboardItem.supports && !ClipboardItem.supports("image/png"))) {
     showStatus("Image clipboard is unsupported. Use Download PNG instead.", true);
     return;
   }
 
+  let exportFailure;
   try {
     const isWhite = equationColor() === "#ffffff";
     // Pass the Blob promise directly so clipboard.write starts during the user gesture.
-    const png = generatePngBlob(COPY_SCALE);
+    const png = flushRender().then(() => generatePngBlob(COPY_SCALE)).catch(error => {
+      exportFailure = error;
+      throw error;
+    });
     await navigator.clipboard.write([new ClipboardItem({ "image/png": png })]);
     showStatus(isWhite
-      ? "White equation copied as transparent image"
-      : "Dark equation copied as transparent image");
+      ? "White equation copied as a transparent image"
+      : "Dark equation copied as a transparent image");
   } catch (error) {
-    showStatus("Clipboard access failed. Use Download PNG instead.", true);
+    const failure = exportFailure || error;
+    showStatus(failure?.name === "ExportError"
+      ? failure.message
+      : "Clipboard access failed. Use Download PNG instead.", true);
   }
 }
 
@@ -436,6 +545,7 @@ async function copyLatex() {
 
 async function downloadPng() {
   try {
+    await flushRender();
     const blob = await generatePngBlob(DOWNLOAD_SCALE);
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
@@ -506,7 +616,7 @@ document.querySelector("#clear-input").addEventListener("click", () => {
   input.focus();
 });
 function selectEquation() {
-  if (!preview.querySelector("svg")) return;
+  if (!preview.querySelector("svg") || preview.classList.contains("is-stale")) return;
   preview.classList.add("is-selected");
   preview.focus({ preventScroll: true });
 }
@@ -532,11 +642,7 @@ if (window.MathJax?.startup?.promise) {
       document.head.appendChild(MathJax.svgStylesheet());
     }
     queueRender(true);
-  }).catch(() => {
-    preview.replaceChildren(makePlaceholder("Equation preview could not load."));
-    setError("Equation preview could not load. Check your internet connection and reload the page.");
-  });
+  }).catch(showPreviewUnavailable);
 } else {
-  preview.replaceChildren(makePlaceholder("Equation preview could not load."));
-  setError("Equation preview could not load. Check your internet connection and reload the page.");
+  showPreviewUnavailable();
 }

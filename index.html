@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#f5f6f7">
     <title>CTF LaTeX Equation Tool</title>
     <link rel="icon" type="image/svg+xml" href="assets/fx-logo.svg?v=20261020-function">
-    <link rel="stylesheet" href="style.css?v=20261103-ai-import">
+    <link rel="stylesheet" href="style.css?v=20261121-workspace">
     <script>
       window.MathJax = {
         tex: {
@@ -20,78 +20,75 @@
       };
     </script>
     <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-svg.js"></script>
-    <script defer src="script.js?v=20261103-rich-math"></script>
+    <script defer src="script.js?v=20261121-workspace"></script>
   </head>
   <body>
     <main class="app-shell">
       <header class="app-header">
-        <div class="brand-lockup">
-          <img class="brand-logo" src="assets/fx-logo.svg?v=20261020-function" alt="" width="60" height="60">
-          <div>
-            <h1>CTF LaTeX Equation Tool</h1>
-            <p>Write an equation, then click its preview and press <kbd>Ctrl</kbd> + <kbd>C</kbd> to copy an image.</p>
-          </div>
+        <img class="brand-logo" src="assets/fx-logo.svg?v=20261020-function" alt="" width="56" height="56">
+        <div>
+          <h1>CTF LaTeX Equation Tool</h1>
+          <p>Write LaTeX, check the preview, then copy the equation as a transparent PNG.</p>
         </div>
       </header>
 
-      <details class="panel ai-import" open>
-        <summary><span>LaTeX from AI chats</span><span class="ai-providers">ChatGPT · DeepSeek · Gemini</span></summary>
-        <p class="field-help">Paste an AI response, extract its equations, then send one to the editor below.</p>
+      <details class="panel ai-import" id="ai-import">
+        <summary>
+          <span class="summary-title">Import from an AI chat</span>
+          <span class="summary-desc">Paste a ChatGPT, DeepSeek, or Gemini response and pick one of its equations.</span>
+        </summary>
         <div class="ai-import-grid">
           <div>
             <label class="field-label" for="ai-source">AI response or LaTeX code block</label>
             <textarea id="ai-source" spellcheck="false" maxlength="50000" aria-describedby="ai-help" placeholder="Paste a response containing \[...\], \(...\), $$...$$, $...$, or a LaTeX code block."></textarea>
-            <label class="ai-raw-option"><input type="checkbox" id="ai-raw"> Bare LaTeX only (no delimiters or explanation)</label>
-            <p class="field-help" id="ai-help">Paste directly from the original chat with Ctrl+V to preserve available formula source. Also accepts LaTeX delimiters, code blocks, and environments. If only scrambled symbols remain, request LaTeX source.</p>
-            <div class="ai-import-actions">
+            <label class="checkbox-option"><input type="checkbox" id="ai-raw"> Bare LaTeX only: treat the whole paste as one equation</label>
+            <p class="field-help" id="ai-help">Paste with <kbd data-mod-key>Ctrl</kbd> + <kbd>V</kbd> straight from the chat. Equations are found as soon as you paste.</p>
+            <div class="button-row">
               <button type="button" id="extract-equations">Extract equations</button>
-              <button type="button" id="clear-ai">Clear response</button>
               <button type="button" id="copy-latex-prompt">Copy LaTeX prompt</button>
+              <button type="button" id="clear-ai" class="button-quiet">Clear</button>
             </div>
           </div>
           <div>
             <label class="field-label" for="ai-equations">Choose an equation</label>
             <select id="ai-equations" disabled><option>No equations extracted yet</option></select>
             <pre class="ai-equation-source" id="ai-equation-source">Your selected LaTeX will appear here.</pre>
-            <p class="field-help" id="ai-result" role="status" aria-live="polite">Extract equations to get started.</p>
-            <button type="button" id="import-equation" disabled>Use equation in editor</button>
+            <p class="field-help" id="ai-result" role="status" aria-live="polite">Paste a response to get started.</p>
+            <button type="button" id="import-equation" class="button-primary" disabled>Use equation in editor</button>
           </div>
         </div>
         <p id="ai-error" class="error-message" role="alert" hidden></p>
       </details>
+      <script>
+        try { if (localStorage.getItem("ai-import-open") === "1") document.getElementById("ai-import").open = true; } catch {}
+      </script>
 
       <div class="workspace">
-        <section class="panel input-panel" aria-labelledby="input-title">
-          <div class="panel-heading">
-            <div>
-              <span class="step">01 / INPUT</span>
-              <h2 id="input-title">LaTeX Input</h2>
-            </div>
+        <section class="pane input-pane" aria-labelledby="input-title">
+          <div class="pane-bar">
+            <h2 id="input-title"><label for="latex-input">LaTeX source</label></h2>
+            <button type="button" id="clear-input" class="button-quiet">Clear</button>
           </div>
 
-          <label class="field-label" for="latex-input">Equation source</label>
-          <textarea id="latex-input" spellcheck="false" autocomplete="off" autocapitalize="off" aria-describedby="input-help">$$s = k^{-1}(H(m) + dr) \pmod n$$</textarea>
-          <p class="field-help" id="input-help">Use <code>$$...$$</code> for Display or <code>$...$</code> for Inline. You can also paste a complete <code>\begin{aligned}...\end{aligned}</code> block directly. The first paste replaces the example.</p>
+          <textarea id="latex-input" spellcheck="false" autocomplete="off" autocapitalize="off" aria-describedby="error-message" placeholder="$$...$$ for display, $...$ for inline, or a bare \begin{aligned}...\end{aligned} block">$$s = k^{-1}(H(m) + dr) \pmod n$$</textarea>
 
-          <div class="settings-row">
-            <div class="preset-field">
-              <label class="field-label" for="preset-select">Examples</label>
-              <select id="preset-select">
-                <option value="">Choose an example</option>
-                <option value="rsa-encryption">RSA Encryption</option>
-                <option value="rsa-decryption">RSA Decryption</option>
-                <option value="euler-totient">Euler Totient</option>
-                <option value="ecdsa-signature">ECDSA Signature</option>
-                <option value="elliptic-curve">Elliptic Curve</option>
-                <option value="modular-inverse">Modular Inverse</option>
-                <option value="polynomial">Polynomial</option>
-                <option value="matrix">Matrix</option>
-              </select>
-            </div>
+          <div class="pane-bar pane-footer">
+            <label class="visually-hidden" for="preset-select">Examples</label>
+            <select id="preset-select">
+              <option value="">Insert an example…</option>
+              <option value="rsa-encryption">RSA Encryption</option>
+              <option value="rsa-decryption">RSA Decryption</option>
+              <option value="euler-totient">Euler Totient</option>
+              <option value="ecdsa-signature">ECDSA Signature</option>
+              <option value="elliptic-curve">Elliptic Curve</option>
+              <option value="modular-inverse">Modular Inverse</option>
+              <option value="polynomial">Polynomial</option>
+              <option value="matrix">Matrix</option>
+            </select>
 
             <fieldset class="mode-field">
-              <legend class="field-label">Mode</legend>
-              <div class="mode-options">
+              <legend class="visually-hidden">Mode</legend>
+              <div class="segmented">
                 <label><input type="radio" name="mode" value="display" checked><span>Display</span></label>
                 <label><input type="radio" name="mode" value="inline"><span>Inline</span></label>
               </div>
@@ -99,49 +96,47 @@
           </div>
         </section>
 
-        <section class="panel output-panel" aria-labelledby="preview-title">
-          <div class="panel-heading">
-            <div>
-              <span class="step">02 / OUTPUT</span>
-              <h2 id="preview-title">Equation Preview</h2>
-            </div>
-            <span class="preview-badge">LIVE</span>
+        <section class="pane output-pane" aria-labelledby="preview-title">
+          <div class="pane-bar">
+            <h2 id="preview-title">Preview</h2>
+            <fieldset class="paste-field">
+              <legend>Paste onto</legend>
+              <div class="segmented">
+                <label><input type="radio" name="paste-background" value="light" checked><span>Light background</span></label>
+                <label><input type="radio" name="paste-background" value="dark"><span>Dark background</span></label>
+              </div>
+            </fieldset>
           </div>
 
-          <div id="equation-preview" class="equation-preview" tabindex="0" role="region" aria-label="Rendered equation. Click or drag over it, then press Control C, or Command C on macOS, to copy as an image" aria-describedby="preview-help">
-            <span class="placeholder">Loading equation preview…</span>
-          </div>
-          <p id="preview-help" class="field-help">Click or drag over the equation to select it, then press <kbd>Ctrl</kbd> + <kbd>C</kbd> (<kbd>⌘</kbd> + <kbd>C</kbd> on Mac).</p>
-          <p id="error-message" class="error-message" role="alert" hidden></p>
-
-          <fieldset class="export-color-field">
-            <legend class="field-label">Background where you will paste</legend>
-            <div class="mode-options">
-              <label><input type="radio" name="paste-background" value="light" checked><span>Light · dark equation</span></label>
-              <label><input type="radio" name="paste-background" value="dark"><span>Dark · white equation</span></label>
+          <div class="preview-stage">
+            <div id="equation-preview" class="equation-preview" tabindex="0" role="region" aria-label="Rendered equation. Click it, then press Control C, or Command C on macOS, to copy it as an image" aria-describedby="preview-help">
+              <span class="placeholder">Loading equation preview…</span>
             </div>
-          </fieldset>
+            <p id="preview-help" class="preview-hint" hidden>Click the equation, then press <kbd data-mod-key>Ctrl</kbd> + <kbd>C</kbd> to copy it as an image</p>
+            <p id="error-message" class="error-message" role="alert" hidden></p>
+            <p id="status" class="status" role="status" aria-live="polite"></p>
+          </div>
 
-          <div class="actions" aria-label="Equation actions">
+          <div class="pane-bar pane-footer actions" role="group" aria-label="Equation actions">
+            <button type="button" id="copy-image" class="button-primary" title="Transparent PNG, sized for documents" disabled>Copy image</button>
+            <button type="button" id="download-png" title="Transparent PNG at 4× resolution" disabled>Download PNG <span class="button-meta">4×</span></button>
             <button type="button" id="copy-latex">Copy LaTeX</button>
-            <button type="button" id="copy-image" disabled>Copy Image</button>
-            <button type="button" id="download-png" disabled>Download PNG</button>
-            <button type="button" id="clear-input" class="clear-button">Clear</button>
           </div>
-          <p class="export-note">Copy Image: smaller PNG for documents · Download PNG: 4× resolution. Both are transparent and tightly cropped. Choose the background above to set the equation color.</p>
         </section>
       </div>
 
-      <p id="status" class="status" role="status" aria-live="polite"></p>
-
       <footer class="project-footer">
         <a class="creator-link" href="https://github.com/PocariKaleng" target="_blank" rel="noopener noreferrer" aria-label="Ariq Ardian on GitHub">
-          <img src="assets/profile.png" alt="" width="52" height="52" loading="lazy">
-          <span><strong>Ariq Ardian</strong><small>@PocariKaleng · GitHub profile</small></span>
+          <img src="assets/profile.png" alt="" width="44" height="44" loading="lazy">
+          <span><strong>Ariq Ardian</strong><small>@PocariKaleng on GitHub</small></span>
         </a>
         <div class="project-support">
-          <span>Find this tool useful? Support the project on GitHub.</span>
-          <a class="star-link" href="https://github.com/PocariKaleng/Latex-Math-Generate-Equations" target="_blank" rel="noopener noreferrer">★ Star the repository <span aria-hidden="true">↗</span></a>
+          <span>Useful for your writeups? A star helps others find it.</span>
+          <a class="star-link" href="https://github.com/PocariKaleng/Latex-Math-Generate-Equations" target="_blank" rel="noopener noreferrer">
+            <svg class="icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.75l1.93 3.91 4.32.63-3.13 3.05.74 4.3L8 11.61l-3.86 2.03.74-4.3-3.13-3.05 4.32-.63L8 1.75z"/></svg>
+            Star on GitHub
+            <svg class="icon icon-external" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3.5h6.5V10M12.5 3.5L4 12"/></svg>
+          </a>
         </div>
       </footer>
     </main>
